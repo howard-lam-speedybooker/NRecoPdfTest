@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    # Windows, not ubuntu: NReco.PdfGenerator embeds the Windows wkhtmltopdf binary, the same one
+    # the old SB IIS hosts run.
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+    - name: Upload rendered PDFs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: rendered-pdfs
+        path: NRecoPdfTest.Tests/bin/Debug/net10.0/pdf-output/
+        if-no-files-found: warn
